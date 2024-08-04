@@ -4,6 +4,11 @@ if [ ${STEAM_CRED:-SteamUsername} = "SteamUsername" ] && [ ${STEAM_PASS:-SteamPa
     exit 1
 fi
 
+if [ -v HEADLESS_KEY ]; then
+echo "Headless branch password is set."
+STEAM_BRANCH=headless
+fi
+
 echo "=== INSTALLING HEADLESS CONFIG FILE ==="
 echo "Selected file: Config/${CONFIG_FILE:=Config.json}"
 RESONITE_CONFIG=$(grep -v " null," "/Config/$CONFIG_FILE")
@@ -14,13 +19,16 @@ cat >/etc/crystite/conf.d/steamcreds.json <<EOF
         "resonitePath": "/var/lib/crystite/Resonite",
         "manageResoniteInstallation": true,
         "steamCredential": "$STEAM_CRED",
-        "steamPassword": "$STEAM_PASS"
+        "steamPassword": "$STEAM_PASS",
+        "steamBranch": "${STEAM_BRANCH:=public}",
+        "steamBranchCode": "$HEADLESS_KEY"
     },
 }
 EOF
 
 if [ ! -d /var/lib/crystite/Resonite ] || [ ! -e /var/lib/crystite/Resonite/Resonite.x86_64 ]; then
 echo "=== INSATLLING RESONITE ==="
+echo "Using $STEAM_BRANCH branch."
 /usr/lib/crystite/crystite --install-only --allow-unsupported-resonite-version
 fi
 
