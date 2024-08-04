@@ -24,22 +24,6 @@ echo "=== INSATLLING RESONITE ==="
 /usr/lib/crystite/crystite --install-only --allow-unsupported-resonite-version
 fi
 
-# test -e /var/lib/crystite/Resonite/modloader && LAST_MODLOADER=$(cat /var/lib/crystite/Resonite/modloader)
-# if [ ${MODLOADER:=None} != ${LAST_MODLOADER:=None} ]; then
-# echo "=== CLEANING UP PREVIOUS MODLOADER ==="
-# case $LAST_MODLOADER in
-#   RML)
-#     test -e /etc/crystite/conf.d/modloader.json && rm /etc/crystite/conf.d/modloader.json
-#     # This probably isn't necessarry but lets do it anyway
-#     rm /var/lib/crystite/Resonite/Libraries/ResoniteModLoader.dll /var/lib/crystite/Resonite/rml_libs/0Harmony.dll
-#     ;;
-#   MonkeyLoader|MonkeyLoaderRML)
-    
-#     ;;
-# esac
-# fi
-# echo $MODLOADER > /var/lib/crystite/Resonite/modloader
-
 if [ ${MODLOADER:=None} != "None" ]; then
 echo "=== INSTALLING MODLOADER ==="
 case $MODLOADER in
@@ -52,15 +36,8 @@ case $MODLOADER in
         /var/lib/crystite/Resonite/rml_config
     wget -O /var/lib/crystite/Resonite/Libraries/ResoniteModLoader.dll "https://github.com/resonite-modding-group/ResoniteModLoader/releases/latest/download/ResoniteModLoader.dll"
     test ! -e /var/lib/crystite/Resonite/Libraries/ResoniteModLoader.dll && echo "Failed to download ResoniteModLoader.dll!" && exit 1
-    wget -O /var/lib/crystite/Resonite/rml_libs/0Harmony.dll "https://github.com/resonite-modding-group/ResoniteModLoader/releases/latest/download/0Harmony.dll"
-    test ! -e /var/lib/crystite/Resonite/rml_libs/0Harmony.dll && echo "Failed to download 0Harmony.dll!" && exit 1
-    cat >/etc/crystite/conf.d/modloader.json <<EOF
-{
-    "Resonite": {
-        "pluginAssemblies": ["/var/lib/crystite/Resonite/Libraries/ResoniteModLoader.dll"],
-    },
-}
-EOF
+    wget -O /var/lib/crystite/Resonite/rml_libs/0Harmony-Net8.dll "https://github.com/resonite-modding-group/ResoniteModLoader/releases/latest/download/0Harmony-Net8.dll"
+    test ! -e /var/lib/crystite/Resonite/rml_libs/0Harmony-Net8.dll && echo "Failed to download 0Harmony-Net8.dll!" && exit 1
     ;;
   MonkeyLoader)
     echo "Selected modloader: MonkeyLoader"
@@ -90,6 +67,28 @@ EOF
 esac
 else
 echo "No modloader selected, skipping installation."
+fi
+
+if [ -d /var/lib/crystite/Resonite/Libraries ] && [ ! -z "$(find /var/lib/crystite/Resonite/Libraries -type f -name '*.dll')"]; then
+echo "=== ENABLING PLUGINS ==="
+assemblies=""
+for assembly in /var/lib/crystite/Resonite/Libraries/*.dll; do
+  echo "- ${assembly##*/}"
+  if [ -z "$assemblies" ]; then
+    assemblies="\"$assembly\""
+  else
+    assemblies="$assemblies, \"$assembly\""
+  fi
+done
+cat >/etc/crystite/conf.d/plugins.json <<EOF
+{
+    "Resonite": {
+        "pluginAssemblies": [$assemblies],
+    },
+}
+EOF
+else
+echo "No plugins found, skipping configuration."
 fi
 
 echo "=== STARTING CRYSTITE ==="
